@@ -63,6 +63,7 @@ importScript(
 			let now = Date.now().floor("day").unix();
 			let day2 = now-Duration.DAY.seconds()*2;
 			let day3 = now-Duration.DAY.seconds()*3;
+			let day7 = now-Duration.DAY.seconds()*7;
 			let day14 = now-Duration.DAY.seconds()*14;
 
 			// GET THE FREQUENT ORANGES
@@ -76,6 +77,7 @@ importScript(
 						"select": [
 							{"name": "Day2", "value": {"when": {"gte": {"timestamp": day2}}, "then": 1}, "aggregate": "sum"},
 							{"name": "Day3", "value": {"when": {"gte": {"timestamp": day3}}, "then": 1}, "aggregate": "sum"},
+							{"name": "Day7", "value": {"when": {"gte": {"timestamp": day7}}, "then": 1}, "aggregate": "sum"},
 							{"name": "Day14", "value": "bug", "aggregate": "count"},
 						],
 						"groupby": ["bug"],
@@ -94,7 +96,7 @@ importScript(
 				oranges = Map.zip(response.data.mapExists(function (b, i) {
 					b.ordering = i;
 					b.comments = [];
-					if (b.Day2 >= MIN_ORANGE_COUNT && (b.Day2 >= b.Day14 || b.Day3 >= b.Day14 * 2)) {
+					if (b.Day2 >= MIN_ORANGE_COUNT && (b.Day2 == b.Day14 || b.Day3 == b.Day7)) {
 						return [b.bug, b]
 					}//endif
 				}));
@@ -114,7 +116,7 @@ importScript(
 						{"name":"Description", "value":"short_desc"},
 						"modified_ts",
 						"created_ts",
-						"status_whitebaord"
+						"status_whiteboard"
 					],
 					"esfilter": {"and": [
 						{"range":{"expires_on":{"gt":Date.now().getMilli()}}},

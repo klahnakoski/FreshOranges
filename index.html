@@ -19,7 +19,8 @@
 
 	<hr>
 	<div id="description">
-		A list of intermittent failures that have started in the past few days.
+		A list of intermittent failures that have seen 10 or more failures, all in the past few days.
+		Limited to inbound, central, and autoland.
 		This does not include bugs marked with "stockwell infra".
 	</div>
 	<hr>
@@ -87,7 +88,7 @@ importScript(
 								{"in": {"tree": ["mozilla-central", "mozilla-inbound", "autoland"]}},
 							],
 						},
-						"limit": 200,
+						"limit": 400,
 						"format": "list",
 					},
 				});

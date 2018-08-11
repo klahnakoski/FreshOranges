@@ -24,7 +24,7 @@
 			<li>Seen 10 or more failures in the past 2 days
 			<li>All those failures must have happened in the past 3 days.
 			<li>Limited to inbound, central, and autoland.
-			<li>Not including bugs marked with "stockwell infra".
+			<li>Not including bugs marked with "stockwell infra" or "retriggered".
 		</ul>
 	</div>
 	<hr>
@@ -153,7 +153,14 @@ importScript(
 			output = qb
 			.sort(output.filter(
 				function (b) {
-					return coalesce(b.status_whiteboard, "").indexOf("stockwell infra") == -1
+                    let include = true;
+                    let whiteboard_tags = ["stockwell infra", "retriggered"];
+                    whiteboard_tags.forEach(function callback(wbtag) {
+                        if (coalesce(b.status_whiteboard, "").indexOf(wbtag) >= 0) {
+                            include = false;
+                        }
+                    });
+					return include;
 				},
 			), {"value": "Day2", "sort": -1});
 			let html = new Template([

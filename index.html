@@ -77,23 +77,25 @@ importScript(
 				let response = yield Rest.post({
 					"url": "https://activedata.allizom.org/query",
 					"json": {
-						"from": "orange_factor",
-						"select": [
-							{"name": "Day2", "value": {"when": {"gte": {"timestamp": day2}}, "then": 1}, "aggregate": "sum"},
-							{"name": "Day3", "value": {"when": {"gte": {"timestamp": day3}}, "then": 1}, "aggregate": "sum"},
-							{"name": "Day7", "value": {"when": {"gte": {"timestamp": day7}}, "then": 1}, "aggregate": "sum"},
-							{"name": "Day14", "value": "bug", "aggregate": "count"},
-						],
-						"groupby": ["bug"],
+							"from":"treeherder",
+							"select":[
+								{"name": "Day2", "value": {"when": {"gte": {"repo.push.date": day2}}, "then": 1}, "aggregate": "count"},
+								{"name": "Day3", "value": {"when": {"gte": {"repo.push.date": day3}}, "then": 1}, "aggregate": "count"},
+								{"name": "Day7", "value": {"when": {"gte": {"repo.push.date": day7}}, "then": 1}, "aggregate": "count"},
+								{"name": "Day14", "value": "bug", "aggregate": "count"},
+							],
+						"edges": [{"name": "bug", "value": "bugs.bug_id", "allowNulls": false}],
 						"where": {
 							"and": [
-								{"lt": {"timestamp": now}},
-								{"gte": {"timestamp": day14}},
-								{"in": {"tree": ["mozilla-central", "mozilla-inbound", "autoland"]}},
+								{"ne": {"failure.classify": "not classified"}},
+								{"in": {"repo.branch.name": ["mozilla-inbound", "autoland", "mozilla-central"]}},
+								{"gte": {"repo.push.date": day14}},
+								{"lt": {"repo.push.date": now}},
+								{"exists": "bugs.bug_id"},
 							],
 						},
 						"limit": 400,
-						"format": "list",
+						"format": "list"
 					},
 				});
 

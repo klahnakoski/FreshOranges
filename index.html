@@ -112,25 +112,30 @@ importScript(
 
 
 			let bugs=null;
+			let orange_keys = Map.values(oranges).select("bug");
 
 			let ba = Log.action("get bugs", true);
 			try{
-				response = yield ESQuery.run({
+				response = yield ActiveDataQuery.run({
 					"from": "public_bugs",
 					"select": [
 						"bug_id",
 						{"name":"Description", "value":"short_desc"},
 						"modified_ts",
 						"created_ts",
-						"status_whiteboard"
+						"status_whiteboard",
 					],
-					"esfilter": {"and": [
-						{"range":{"expires_on":{"gt":Date.now().getMilli()}}},
-						{"terms": {"bug_id": Map.keys(oranges)}}
-					]}
+					"where": {
+						"and": [
+							{"range": {"expires_on": {"gt": Date.now().getMilli()}}},
+							{"terms": {"bug_id": orange_keys}},
+						],
+					},
+					"format": "list",
+					"limit": 1000,
 				});
 
-				response.list.forall(function(b){
+				response.data.forall(function(b){
 					Map.setDefault(oranges[b.bug_id], b);
 				});
 			}finally{
@@ -197,7 +202,8 @@ importScript(
 				[
 				],
 				"bugs",
-				false		//SHOW DEFAULT FILTERS?
+				false,		//SHOW DEFAULT FILTERS?
+				false		//CONSISTENCY CHECK?
 			);
 		});
 

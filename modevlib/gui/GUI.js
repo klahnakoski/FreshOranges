@@ -133,9 +133,10 @@ GUI = {};
 				GUI.pleaseRefreshLater=true;
 				//USE DEFAULT FILTERS
 				importScript(["ComponentFilter.js", "ProductFilter.js", "ProgramFilter.js"], function(){
-					GUI.state.programFilter = new ProgramFilter();
-					GUI.state.productFilter = new ProductFilter();
-					GUI.state.componentFilter = new ComponentFilter();
+					let programs = coalesce(showDefaultFilters.programs, MozillaPrograms);
+					GUI.state.programFilter = new ProgramFilter(indexName, programs);
+					GUI.state.productFilter = new ProductFilter(indexName);
+					GUI.state.componentFilter = new ComponentFilter(indexName, GUI.state.productFilter);
 
 					GUI.customFilters.push(GUI.state.programFilter);
 					GUI.customFilters.push(GUI.state.productFilter);
@@ -158,58 +159,22 @@ GUI = {};
 			Thread.run("show last updated timestamp", function*() {
 				var time;
 
-				if (indexName === undefined || indexName == null || indexName == "bugs") {
-					var result = yield (ESQuery.run({
-						"from": "bugs",
+				if (indexName === undefined || indexName == null || indexName == "bugs" || indexName == "private_bugs") {
+					indexName = coalesce(indexName, "bugs");
+					let result = yield (ActiveDataQuery.run({
+						"from": indexName,
 						"select": {"name": "max_date", "value": "modified_ts", "aggregate": "maximum"},
-						"esfilter": {"range": {"modified_ts": {"gte": Date.eod().addMonth(-1).getMilli()}}}
+						"where": {"range": {"modified_ts": {"gte": Date.eod().addMonth(-1).getMilli()}}}
 					}));
 
-					time = new Date(result.cube.max_date);
+					time = new Date(result.data.max_date);
 					var tm = $("#testMessage");
 					tm.html(new Template("<div style={{style|style}}>{{name}}</div>").expand(result.index));
 					tm.append("<br>ES Last Updated " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
-				} else if (indexName == "reviews") {
-										var result = yield (ESQuery.run({
-												"from": "reviews",
-												"select": [
-														{"name": "last_request", "value": "request_time", "aggregate": "maximum"}
-												]
-										}));
-										time = Date.newInstance(result.cube.last_request);
-										$("#testMessage").html("Reviews Last Updated " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
 				} else if (indexName == "bug_tags") {
 					esHasErrorInIndex = false;
 					time = yield (BUG_TAGS.getLastUpdated());
 					$("#testMessage").html("Bugs Last Updated " + time.addTimezone().format("NNN dd"));
-				} else if (indexName == "bug_summary") {
-					esHasErrorInIndex = false;
-					time = new Date((yield(ESQuery.run({
-						"from": "bug_summary",
-						"select": {"name": "max_date", "value": "modified_time", "aggregate": "maximum"}
-					}))).cube.max_date);
-					$("#testMessage").html("Bug Summaries Last Updated " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
-				} else if (indexName == "datazilla") {
-					esHasErrorInIndex = false;
-					time = new Date((yield(ESQuery.run({
-						"from": "talos",
-						"select": {"name": "max_date", "value": "testrun.date", "aggregate": "maximum"}
-					}))).cube.max_date);
-					$("#testMessage").html("Datazilla Last Updated " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
-				} else if (indexName == "perfy") {
-					esHasErrorInIndex = false;
-					time = new Date((yield(ESQuery.run({
-						"from": "perfy",
-						"select": {"name": "max_date", "value": "info.started", "aggregate": "maximum"}
-					}))).cube.max_date);
-					$("#testMessage").html("Builds Last Updated " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
-				}else if (indexName == "talos"){
-					esHasErrorInIndex = false;
-					time = new Date((yield(ESQuery.run({
-						"from":"talos",
-						"select":{"name": "max_date", "value":"testrun.date","aggregate":"maximum"}
-					}))).cube.max_date);
-					$("#testMessage").html("Latest Push " + time.addTimezone().format("NNN dd @ HH:mm") + Date.getTimezone());
 				} else {
 					return;
 				}//endif
@@ -271,7 +236,7 @@ GUI = {};
 			var simpleState = {};
 			Map.forall(GUI.state, function (k, v) {
 
-				var p = GUI.parameters.map(function (v, i) {
+				var p = GUI.parameters.mapExists(function (v, i) {
 					if (v.id == k) return v;
 				})[0];
 
@@ -305,7 +270,7 @@ GUI = {};
 			Map.forall(urlState, function (k, v) {
 				if (GUI.state[k] === undefined) return;
 
-				var p = GUI.parameters.map(function (v, i) {
+				var p = GUI.parameters.mapExists(function (v, i) {
 					if (v.id == k) return v;
 				})[0];
 
@@ -329,7 +294,7 @@ GUI = {};
 					if (v.trim()==""){
 						GUI.state[k]=[];
 					}else{
-						GUI.state[k] = v.split(",").map(String.trim).unwrap();
+						GUI.state[k] = v.split(",").mapExists(String.trim).unwrap();
 					}//endif
 				} else if (p && p.type == "code") {
 					v = v.escape(Map.inverse(GUI.urlMap));
@@ -542,7 +507,7 @@ GUI = {};
 					if (v.trim() == "") {
 						GUI.state[param.id]=[];
 					}else{
-						GUI.state[param.id]=v.split(",").map(String.trim);
+						GUI.state[param.id]=v.split(",").mapExists(String.trim);
 					}//endif
 				} else {
 					v = $("#" + param.id).val();
@@ -644,7 +609,7 @@ GUI = {};
 
 				var threads = [];
 				GUI.customFilters.forall(function (f, i) {
-					var t = Thread.run(function*() {
+					var t = Thread.run("refresh filter", function*() {
 						yield (f.refresh());
 					});
 					t.name = GUI.customFilters[i].name;
@@ -697,7 +662,7 @@ GUI = {};
 			var output = {"and": []};
 			GUI.customFilters.forall(function (f, i) {
 				if (f.makeFilter){
-					output.and.push(f.makeFilter());
+					output.and.push(f.makeFilter(indexName));
 				}//endif
 			});
 			return output;

@@ -37,11 +37,8 @@ importScript("charts/aColor.js");
 		},
 
 		//REGISTER GENERATORS THAT HANDLE qb QUERIES
-		"host_types":{
-
-
+		"host_types": {
 		}
-
 	};
 
 
@@ -50,10 +47,4 @@ importScript("charts/aColor.js");
 		v._id=k;
 		v.name=coalesce(v.name, k);
 	});
-
-	//TRY PRIVATE CLUSTER FIRST, THEN FALL BACK TO PUBLIC
-	// Settings.indexes.bugs.alternate = Settings.indexes.public_bugs;
-
-
-
 })();

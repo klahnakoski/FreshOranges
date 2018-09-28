@@ -4,210 +4,212 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <HTML>
 <HEAD>
-	<title>Fresh Oranges</title>
-	<script type="text/javascript" src="modevlib/imports/import.js"></script>
+  <title>Fresh Oranges</title>
+  <script type="text/javascript" src="modevlib/imports/import.js"></script>
 </HEAD>
 <BODY>
 
 <div id="sidebar" style="width:300px;">
-	<br>
-	<br>
+  <br>
+  <br>
 
-	<div style="height: 30px; text-align: center;vertical-align:middle;">
-		<span id="status" style="height:30px">Page Loading...</span><span class="loading"><img src="images/spinner.gif" alt=""></span>
-	</div>
+  <div style="height: 30px; text-align: center;vertical-align:middle;">
+    <span id="status" style="height:30px">Page Loading...</span><span class="loading"><img src="images/spinner.gif" alt=""></span>
+  </div>
 
-	<hr>
-	<div id="description">
-		A list of intermittent failures that
-		<ul>
-			<li>Seen 10 or more failures in the past 2 days
-			<li>All those failures must have happened in the past 3 days.
-			<li>Limited to inbound, central, and autoland.
-			<li>Not including bugs marked with "stockwell infra" or "retriggered".
-		</ul>
-	</div>
-	<hr>
-	<div id="testMessage"></div>
-	<hr>
-	<div id="stats"></div>
-	<hr>
-	<div id="parameters" class="parameters">
-	</div>
-	<div id="filters" class="menu"></div>
+  <hr>
+  <div id="description">
+    A list of intermittent failures that
+    <ul>
+      <li>Seen 10 or more failures in the past 2 days
+      <li>All those failures must have happened in the past 3 days.
+      <li>Limited to inbound, central, and autoland.
+      <li>Not including bugs marked with "stockwell infra" or "retriggered".
+    </ul>
+  </div>
+  <hr>
+  <div id="testMessage"></div>
+  <hr>
+  <div id="stats"></div>
+  <hr>
+  <div id="parameters" class="parameters">
+  </div>
+  <div id="filters" class="menu"></div>
 </div>
 
 <div style="align:left;position:relative;float:left;width:800px;">
-	<h1 id="title">Fresh Oranges</h1>
-	<br>
-	<div id="content" style="width:800px;"></div>
+  <h1 id="title">Fresh Oranges</h1>
+  <br>
+  <div id="content" style="width:800px;"></div>
 </div>
 
 
 <script type="application/javascript">
 
-importScript(
-	[
-		"js/review.js",
-		'modevlib/main.js'
-	], function(){
-		let MIN_ORANGE_COUNT = 10;
+  importScript(
+    [
+      "js/review.js",
+      'modevlib/main.js',
+    ], function () {
+      let MIN_ORANGE_COUNT = 10;
 
-		let thread;
-		let createChart = function(){
-			if (thread !== undefined)
-				thread.kill();
-			thread = Thread.run(__createChart());
-		};
+      let thread;
+      let createChart = function () {
+        if (thread !== undefined)
+          thread.kill();
+        thread = Thread.run(__createChart());
+      };
 
-		let __createChart = function*(){
-			// let OLD = Date.today().subtract(Duration.WEEK).getMilli();
+      let __createChart = function* () {
+        // let OLD = Date.today().subtract(Duration.WEEK).getMilli();
 
-			let oranges=null;
-			let now = Date.now().floor("day").unix();
-			let day2 = now-Duration.DAY.seconds()*2;
-			let day3 = now-Duration.DAY.seconds()*3;
-			let day7 = now-Duration.DAY.seconds()*7;
-			let day14 = now-Duration.DAY.seconds()*14;
+        let oranges = null;
+        let now = Date.now().floor("day").unix();
+        let day2 = now - Duration.DAY.seconds() * 2;
+        let day3 = now - Duration.DAY.seconds() * 3;
+        let day7 = now - Duration.DAY.seconds() * 7;
+        let day14 = now - Duration.DAY.seconds() * 14;
 
-			// GET THE FREQUENT ORANGES
-			let a = Log.action("get oranges", true);
-			try {
+        // GET THE FREQUENT ORANGES
+        let a = Log.action("get oranges", true);
+        try {
 
-				let response = yield Rest.post({
-					"url": "https://activedata.allizom.org/query",
-					"json": {
-							"from":"treeherder",
-							"select":[
-								{"name": "Day2", "value": {"when": {"gte": {"repo.push.date": day2}}, "then": 1}, "aggregate": "count"},
-								{"name": "Day3", "value": {"when": {"gte": {"repo.push.date": day3}}, "then": 1}, "aggregate": "count"},
-								{"name": "Day7", "value": {"when": {"gte": {"repo.push.date": day7}}, "then": 1}, "aggregate": "count"},
-								{"name": "Day14", "value": "bug", "aggregate": "count"},
-							],
-						"edges": [{"name": "bug", "value": "bugs.bug_id", "allowNulls": false}],
-						"where": {
-							"and": [
-								{"ne": {"failure.classify": "not classified"}},
-								{"in": {"repo.branch.name": ["mozilla-inbound", "autoland", "mozilla-central"]}},
-								{"gte": {"repo.push.date": day14}},
-								{"lt": {"repo.push.date": now}},
-								{"exists": "bugs.bug_id"},
-							],
-						},
-						"limit": 400,
-						"format": "list"
-					},
-				});
+          let response = yield Rest.post({
+            "url": "https://activedata.allizom.org/query",
+            "json": {
+              "from": "treeherder",
+              "select": [
+                {"name": "Day2", "value": {"when": {"gte": {"repo.push.date": day2}}, "then": 1}, "aggregate": "count"},
+                {"name": "Day3", "value": {"when": {"gte": {"repo.push.date": day3}}, "then": 1}, "aggregate": "count"},
+                {"name": "Day7", "value": {"when": {"gte": {"repo.push.date": day7}}, "then": 1}, "aggregate": "count"},
+                {"name": "Day14", "value": "bug", "aggregate": "count"},
+              ],
+              "edges": [{"name": "bug", "value": "bugs.bug_id", "allowNulls": false}],
+              "where": {
+                "and": [
+                  {"ne": {"failure.classify": "not classified"}},
+                  {"in": {"repo.branch.name": ["mozilla-inbound", "autoland", "mozilla-central"]}},
+                  {"gte": {"repo.push.date": day14}},
+                  {"lt": {"repo.push.date": now}},
+                  {"exists": "bugs.bug_id"},
+                ],
+              },
+              "limit": 400,
+              "format": "list",
+            },
+          });
 
-				oranges = Map.zip(response.data.mapExists(function (b, i) {
-					b.ordering = i;
-					b.comments = [];
-					if (b.Day2 >= MIN_ORANGE_COUNT && (b.Day2 == b.Day14 || b.Day3 == b.Day7)) {
-						return [b.bug, b]
-					}//endif
-				}));
-			} finally {
-				Log.actionDone(a)
-			}//try
-
-
-			let bugs=null;
-			let orange_keys = Map.values(oranges).select("bug");
-
-			let ba = Log.action("get bugs", true);
-			try{
-				response = yield ActiveDataQuery.run({
-					"from": "public_bugs",
-					"select": [
-						"bug_id",
-						{"name":"Description", "value":"short_desc"},
-						"modified_ts",
-						"created_ts",
-						"status_whiteboard",
-					],
-					"where": {
-						"and": [
-							{"range": {"expires_on": {"gt": Date.now().getMilli()}}},
-							{"terms": {"bug_id": orange_keys}},
-						],
-					},
-					"format": "list",
-					"limit": 1000,
-				});
-
-				response.data.forall(function(b){
-					Map.setDefault(oranges[b.bug_id], b);
-				});
-			}finally{
-				Log.actionDone(ba)
-			}//try
-
-			let output = Map.map(oranges, function(k,v){
-			    if (!v.created_ts){
-			        // SOME BUGS ARE NOT IN THE PUBLIC CLUSTER
-					v.bugAge = "private";
-					v.commentAge = "private";
-					return v;
-				}else{
-					v.bugAge = Duration.newInstance((now*1000) - v.created_ts).round(Duration.DAY) + " days";
-					return v;
-				}//endif
-			});
+          oranges = Map.zip(response.data.mapExists(function (b, i) {
+            b.ordering = i;
+            b.comments = [];
+            if (b.Day2 >= MIN_ORANGE_COUNT && (b.Day2 == b.Day14 || b.Day3 == b.Day7)) {
+              return [b.bug, b]
+            }//endif
+          }));
+        } finally {
+          Log.actionDone(a)
+        }//try
 
 
-			output = qb
-			.sort(output.filter(
-				function (b) {
-                    let include = true;
-                    let whiteboard_tags = ["stockwell infra", "retriggered"];
-                    whiteboard_tags.forEach(function callback(wbtag) {
-                        if (coalesce(b.status_whiteboard, "").indexOf(wbtag) >= 0) {
-                            include = false;
-                        }
-                    });
-					return include;
-				},
-			), {"value": "Day2", "sort": -1});
-			let html = new Template([
-				'<table class="table"><thead><tr>',
-				'<td style="text-align:center">Bug ID</td>',
-				'<td style="text-align:center">Bug Age</td>',
-				'<td>Description</td>',
-				'<td style="text-align:center">2-day Orange Count</td>',
-				'</tr></thead><tbody>',
-				{
-					"from":".",
-					"template":[
-						'<tr class="hoverable" onclick="Bugzilla.showBugs([{{bug}}])">',
-						'<td><div>{{bug}}</div></td>',
-						'<td><div style="width:80px;text-align:center">{{bugAge}}</div></td>',
-						'<td><div style="width:600px;text-wrap: normal;">{{Description}}</div></td>',
-						'<td><div style="text-align: right">{{Day2}}</div></td>',
-						'</tr>'
-					]
-				},
-				'</tbody></table>'
-			]).expand(output);
+        let bugs = null;
+        let orange_keys = Map.values(oranges).select("bug");
 
-			$("#content").html(html);
-			yield (null);
-		};
+        let ba = Log.action("get bugs", true);
+        try {
+          response = yield ActiveDataQuery.run({
+            "from": "public_bugs",
+            "select": [
+              "bug_id",
+              {"name": "Description", "value": "short_desc"},
+              "modified_ts",
+              "created_ts",
+              "status_whiteboard",
+              "bug_status"
+            ],
+            "where": {
+              "and": [
+                {"range": {"expires_on": {"gt": Date.now().getMilli()}}},
+                {"terms": {"bug_id": orange_keys}},
+              ],
+            },
+            "format": "list",
+            "limit": 1000,
+          });
+
+          response.data.forall(function (b) {
+            Map.setDefault(oranges[b.bug_id], b);
+          });
+        } finally {
+          Log.actionDone(ba)
+        }//try
+
+        let output = Map.map(oranges, function (k, v) {
+          if (!v.created_ts) {
+            // SOME BUGS ARE NOT IN THE PUBLIC CLUSTER
+            v.bugAge = "private";
+            v.commentAge = "private";
+            return v;
+          } else {
+            v.bugAge = Duration.newInstance((now * 1000) - v.created_ts).round(Duration.DAY) + " days";
+            return v;
+          }//endif
+        });
 
 
-		$(document).ready(function(){
-			GUI.setup(
-				createChart,
-				[
-				],
-				[
-				],
-				"bugs",
-				false,		//SHOW DEFAULT FILTERS?
-				false		//CONSISTENCY CHECK?
-			);
-		});
+        output = qb
+        .sort(output.filter(
+          function (b) {
+            let include = true;
+            let whiteboard_tags = ["stockwell infra", "retriggered"];
+            whiteboard_tags.forEach(function callback(wbtag) {
+              if (coalesce(b.status_whiteboard, "").indexOf(wbtag) >= 0) {
+                include = false;
+              }//endif
+              if (["RESOLVED", "VERIFIED", "CLOSED"].contains(b.bug_status)){
+                include = false;
+              }//endif
+            });
+            return include;
+          },
+        ), {"value": "Day2", "sort": -1});
+        let html = new Template([
+          '<table class="table"><thead><tr>',
+          '<td style="text-align:center">Bug ID</td>',
+          '<td style="text-align:center">Bug Age</td>',
+          '<td>Description</td>',
+          '<td style="text-align:center">2-day Orange Count</td>',
+          '</tr></thead><tbody>',
+          {
+            "from": ".",
+            "template": [
+              '<tr class="hoverable" onclick="Bugzilla.showBugs([{{bug}}])">',
+              '<td><div>{{bug}}</div></td>',
+              '<td><div style="width:80px;text-align:center">{{bugAge}}</div></td>',
+              '<td><div style="width:600px;text-wrap: normal;">{{Description}}</div></td>',
+              '<td><div style="text-align: right">{{Day2}}</div></td>',
+              '</tr>',
+            ],
+          },
+          '</tbody></table>',
+        ]).expand(output);
 
-	});
+        $("#content").html(html);
+        yield (null);
+      };
+
+
+      $(document).ready(function () {
+        GUI.setup(
+          createChart,
+          [],
+          [],
+          "bugs",
+          false,		//SHOW DEFAULT FILTERS?
+          false		//CONSISTENCY CHECK?
+        );
+      });
+
+    });
 
 </script>
 

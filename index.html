@@ -75,23 +75,23 @@
         try {
 
           let response = yield Rest.post({
-            "url": "http://54.244.44.73/query",
+            "url": "http://activedata.allizom.org/query",
             "json": {
-              "from": "treeherder",
+              "from": "treeherder.bugs",
               "select": [
                 {"name": "Day2", "value": {"when": {"gte": {"repo.push.date": day2}}, "then": 1}, "aggregate": "count"},
                 {"name": "Day3", "value": {"when": {"gte": {"repo.push.date": day3}}, "then": 1}, "aggregate": "count"},
                 {"name": "Day7", "value": {"when": {"gte": {"repo.push.date": day7}}, "then": 1}, "aggregate": "count"},
                 {"name": "Day14", "value": "bug", "aggregate": "count"},
               ],
-              "edges": [{"name": "bug", "value": "bugs.bug_id", "allowNulls": false}],
+              "edges": [{"name": "bug", "value": "bug_id", "allowNulls": false}],
               "where": {
                 "and": [
                   {"ne": {"failure.classify": "not classified"}},
                   {"in": {"repo.branch.name": ["mozilla-inbound", "autoland", "mozilla-central"]}},
                   {"gte": {"repo.push.date": day14}},
                   {"lt": {"repo.push.date": now}},
-                  {"exists": "bugs.bug_id"},
+                  {"exists": "bug_id"},
                 ],
               },
               "limit": 400,

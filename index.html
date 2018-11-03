@@ -87,7 +87,7 @@
               "edges": [{"name": "bug", "value": "bug_id", "allowNulls": false}],
               "where": {
                 "and": [
-                  {"ne": {"failure.classify": "not classified"}},
+                  {"ne": {"failure.classification": "not classified"}},
                   {"in": {"repo.branch.name": ["mozilla-inbound", "autoland", "mozilla-central"]}},
                   {"gte": {"repo.push.date": day14}},
                   {"lt": {"repo.push.date": now}},
